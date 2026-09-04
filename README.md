@@ -13,7 +13,7 @@
 | Windows | **[FastExcel-win-x64.exe](https://github.com/steven10812122/fast-excel/releases/latest/download/FastExcel-win-x64.exe)** |
 | Mac(Apple 晶片,M1/M2/M3/M4) | **[FastExcel-mac-arm64.dmg](https://github.com/steven10812122/fast-excel/releases/latest/download/FastExcel-mac-arm64.dmg)** |
 | Mac(Intel 晶片) | **[FastExcel-mac-x64.dmg](https://github.com/steven10812122/fast-excel/releases/latest/download/FastExcel-mac-x64.dmg)** |
-| Linux | **[FastExcel-linux-x64.AppImage](https://github.com/steven10812122/fast-excel/releases/latest/download/FastExcel-linux-x64.AppImage)** |
+| Linux | **[FastExcel-linux-x86_64.AppImage](https://github.com/steven10812122/fast-excel/releases/latest/download/FastExcel-linux-x86_64.AppImage)** |
 
 不知道自己的 Mac 是哪種晶片:蘋果選單 → 「關於此 Mac」,看「晶片」那一欄是 Apple(M 開頭)還是 Intel。
 
@@ -25,7 +25,7 @@
   xattr -cr "/Applications/Fast Excel.app"
   ```
   或是:先嘗試打開一次(會被擋)→ 到「系統設定」→「隱私權與安全性」→ 往下滑會看到剛剛被擋的提示 → 點「強制打開」
-- **Linux**:下載完先給執行權限再雙擊:`chmod +x FastExcel-linux-x64.AppImage`
+- **Linux**:下載完先給執行權限再雙擊:`chmod +x FastExcel-linux-x86_64.AppImage`
 
 ## 截圖
 
