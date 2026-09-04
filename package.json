@@ -10,7 +10,8 @@
     "benchmark": "node benchmark/generate.js && node benchmark/run.js",
     "benchmark:real-world": "node benchmark/fetch-real-world.js && node benchmark/run-real-world.js",
     "dist:win": "electron-builder --win --x64",
-    "dist:mac": "electron-builder --mac --x64 --arm64"
+    "dist:mac": "electron-builder --mac --x64 --arm64",
+    "dist:linux": "electron-builder --linux --x64"
   },
   "author": "",
   "license": "MIT",
@@ -45,6 +46,10 @@
     "mac": {
       "target": ["dmg"],
       "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Office"
     },
     "publish": {
       "provider": "github",

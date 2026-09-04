@@ -1,0 +1,29 @@
+name: release
+
+# Push a tag like v0.1.0 and this builds installers for Windows, macOS
+# (Intel + Apple Silicon), and Linux, then attaches them to the matching
+# GitHub Release automatically -- no manual build/upload step needed.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npx electron-builder --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

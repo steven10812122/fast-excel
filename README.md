@@ -83,11 +83,14 @@ npm test          # run the test suite
 ### Build a distributable
 
 ```bash
-npm run dist:win   # Windows installer (.exe, NSIS)
-npm run dist:mac    # macOS app (.dmg)
+npm run dist:win     # Windows installer (.exe, NSIS)
+npm run dist:mac     # macOS app (.dmg, Intel + Apple Silicon)
+npm run dist:linux   # Linux (.AppImage)
 ```
 
-Both are **unsigned** builds (no paid code-signing certificate). What that actually means per platform, verified rather than guessed:
+Pushing a tag like `v0.1.0` also builds all three automatically via GitHub Actions (`.github/workflows/release.yml`) and attaches them to that tag's GitHub Release.
+
+Windows and macOS builds are **unsigned** (no paid code-signing certificate). What that actually means per platform, verified rather than guessed:
 
 - **Windows**: SmartScreen shows a warning on first run. Click "More info" → "Run anyway" to proceed.
 - **macOS**: this is worse than a simple warning. Verified with `spctl -a -vv -t execute` against both built `.app` bundles: Gatekeeper **rejects them outright** (`rejected / no usable signature` on Intel, `code has no resources but signature indicates they must be present` on Apple Silicon — the arm64 linker attaches an ad-hoc signature that isn't a full, Gatekeeper-accepted one). After downloading through a browser, this will most likely show as **"Fast Excel" is damaged and can't be opened**, not the milder "unidentified developer" prompt that a right-click → Open bypasses. To actually run it:
@@ -95,6 +98,7 @@ Both are **unsigned** builds (no paid code-signing certificate). What that actua
   - Try opening it once (it will be blocked), then go to System Settings → Privacy & Security, scroll down, and click "Open Anyway" next to the blocked-app notice.
 
   The proper long-term fix is an Apple Developer ID certificate + notarization, which costs money and isn't part of this build.
+- **Linux**: the `.AppImage` just needs execute permission (`chmod +x Fast*.AppImage`) and runs directly — no install, no signing story to deal with.
 
 ## License
 
