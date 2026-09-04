@@ -28,6 +28,7 @@
     "appId": "com.fastexcel.app",
     "productName": "Fast Excel",
     "icon": "build/icon.png",
+    "artifactName": "FastExcel-${os}-${arch}.${ext}",
     "files": [
       "main.js",
       "preload.js",
