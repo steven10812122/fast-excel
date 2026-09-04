@@ -125,9 +125,13 @@ saveRecipeBtn.addEventListener('click', async () => {
 
 loadRecipeBtn.addEventListener('click', async () => {
   try {
-    const fields = await window.fastExcel.loadRecipe();
-    if (!fields) return;
-    state.fields = fields;
+    const result = await window.fastExcel.loadRecipe();
+    if (!result) return; // user cancelled the file picker
+    if (!result.valid) {
+      statusLine.textContent = `匯入失敗:${result.error}`;
+      return;
+    }
+    state.fields = result.fields;
     saveRecipe();
     renderFieldList();
     statusLine.textContent = '設定已匯入。';

@@ -86,13 +86,26 @@ function findHeaderCell(worksheet, keywords, threshold = DEFAULT_THRESHOLD) {
   return best;
 }
 
+// A formula's `result` is either the computed value, or -- if the formula
+// itself errors -- an object like `{ error: '#DIV/0!' }`. Left unhandled,
+// that object leaks through as `[object Object]` in text, and doesn't
+// count as blank, so it would silently be trusted as a real data cell.
+// Surfacing the error string itself instead is both correct (it can't
+// accidentally fuzzy-match a keyword or be mistaken for a real header
+// line) and honest -- it shows up in the export as "#DIV/0!" so a broken
+// source formula stays visible rather than disappearing.
+function formulaResultToPrimitive(result) {
+  if (result && typeof result === 'object' && 'error' in result) return result.error;
+  return result;
+}
+
 function cellText(cell) {
   const v = cell.value;
   if (v === null || v === undefined) return '';
   if (typeof v === 'object') {
     if (v.richText) return v.richText.map((t) => t.text).join('');
     if (v.text) return String(v.text);
-    if (v.result !== undefined) return String(v.result); // formula cell
+    if (v.result !== undefined) return String(formulaResultToPrimitive(v.result));
     return '';
   }
   return String(v);
@@ -103,7 +116,7 @@ function cellRawValue(cell) {
   if (v && typeof v === 'object') {
     if (v.richText) return v.richText.map((t) => t.text).join('');
     if (v.text) return v.text;
-    if (v.result !== undefined) return v.result;
+    if (v.result !== undefined) return formulaResultToPrimitive(v.result);
     return '';
   }
   return v === null || v === undefined ? '' : v;

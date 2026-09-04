@@ -60,7 +60,14 @@ npm run dist:win   # Windows installer (.exe, NSIS)
 npm run dist:mac    # macOS app (.dmg)
 ```
 
-Both are **unsigned** builds (no paid code-signing certificate) — Windows will show a SmartScreen warning and macOS will show a Gatekeeper warning on first run. Click through ("More info → Run anyway" / right-click → Open) to proceed; this is normal for small unsigned tools, not a sign of a problem with the build.
+Both are **unsigned** builds (no paid code-signing certificate). What that actually means per platform, verified rather than guessed:
+
+- **Windows**: SmartScreen shows a warning on first run. Click "More info" → "Run anyway" to proceed.
+- **macOS**: this is worse than a simple warning. Verified with `spctl -a -vv -t execute` against both built `.app` bundles: Gatekeeper **rejects them outright** (`rejected / no usable signature` on Intel, `code has no resources but signature indicates they must be present` on Apple Silicon — the arm64 linker attaches an ad-hoc signature that isn't a full, Gatekeeper-accepted one). After downloading through a browser, this will most likely show as **"Fast Excel" is damaged and can't be opened**, not the milder "unidentified developer" prompt that a right-click → Open bypasses. To actually run it:
+  - Open Terminal and run `xattr -cr "/Applications/Fast Excel.app"` (strips the quarantine flag the browser added), **or**
+  - Try opening it once (it will be blocked), then go to System Settings → Privacy & Security, scroll down, and click "Open Anyway" next to the blocked-app notice.
+
+  The proper long-term fix is an Apple Developer ID certificate + notarization, which costs money and isn't part of this build.
 
 ## License
 

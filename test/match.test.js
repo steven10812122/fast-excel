@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { buildWorkbook, setBorder } = require('./helpers');
-const { processLoadedWorkbook } = require('../src/engine/match');
+const { processLoadedWorkbook, extractManual } = require('../src/engine/match');
 
 function values(block) {
   return block.cells.map((row) => row.map((c) => c.value));
@@ -167,4 +167,44 @@ test('an unmatched field is reported as not matched, not thrown', () => {
   const recipe = { fields: [{ name: '營收', keywords: ['營收'] }] };
   const r = processLoadedWorkbook(wb, 'm.xlsx', recipe);
   assert.equal(r.fields['營收'].matched, false);
+});
+
+test('extractManual re-anchors at a hand-picked cell, bypassing keyword search', () => {
+  const wb = buildWorkbook({
+    // No cell here says "營收" at all -- a real "auto-match found nothing"
+    // case that only a manual override can rescue.
+    Sheet1: { A2: '本期實際數字', B2: 700, C2: 800 },
+  });
+  const ws = wb.getWorksheet('Sheet1');
+  const fr = extractManual(ws, 'A2', new Set());
+  assert.equal(fr.matched, true);
+  assert.equal(fr.manual, true);
+  assert.equal(fr.headerText, '本期實際數字');
+  assert.deepEqual(fr.block.cells[0].map((c) => c.value), [700, 800]);
+});
+
+test('extractManual still stops at another field\'s existing anchor', () => {
+  const wb = buildWorkbook({
+    Sheet1: { A2: '本期', B2: 700, C2: 800, D2: '虧損', E2: 10 },
+  });
+  const ws = wb.getWorksheet('Sheet1');
+  const fr = extractManual(ws, 'A2', new Set(['D2']));
+  assert.deepEqual(fr.block.cells[0].map((c) => c.value), [700, 800]);
+});
+
+test('extractManual returns null for a garbage address', () => {
+  const wb = buildWorkbook({ Sheet1: { A1: 'x' } });
+  const ws = wb.getWorksheet('Sheet1');
+  assert.equal(extractManual(ws, 'not-a-cell', new Set()), null);
+});
+
+test('a formula error surfaces as its error string, not [object Object] or a false match', () => {
+  const wb = buildWorkbook({
+    Sheet1: { A1: '營收', B1: 100, C1: { formula: '1/0', result: { error: '#DIV/0!' } }, D1: 300 },
+  });
+  const recipe = { fields: [{ name: '營收', keywords: ['營收'] }] };
+  const r = processLoadedWorkbook(wb, 'n.xlsx', recipe);
+  // the error cell is not blank, so extension continues through it, and
+  // its value comes back as the plain error string, not the raw object.
+  assert.deepEqual(values(r.fields['營收'].block), [[100, '#DIV/0!', 300]]);
 });
