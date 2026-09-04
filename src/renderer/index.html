@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';" />
+    <title>Fast Excel</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <h1>Fast Excel</h1>
+        <p class="tagline">用關鍵字抓欄位,不用管每份檔案的格子長在哪</p>
+
+        <div class="recipe-header">
+          <h2>抓取設定</h2>
+          <div class="recipe-header-actions">
+            <button id="load-recipe-btn" class="btn btn-ghost" title="讀取之前存的設定檔">匯入</button>
+            <button id="save-recipe-btn" class="btn btn-ghost" title="把目前設定存成檔案,可以分享或搬到別台電腦">匯出</button>
+            <button id="add-field-btn" class="btn btn-ghost">+ 新增欄位</button>
+          </div>
+        </div>
+        <div id="field-list" class="field-list"></div>
+
+        <div class="threshold-row">
+          <label for="threshold-input">比對嚴格度</label>
+          <input id="threshold-input" type="range" min="0.5" max="0.95" step="0.01" value="0.72" />
+          <span id="threshold-value">0.72</span>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="toolbar">
+          <button id="select-folder-btn" class="btn">選擇資料夾</button>
+          <span id="folder-path" class="folder-path">尚未選擇資料夾</span>
+          <label class="checkbox-label">
+            <input id="recursive-checkbox" type="checkbox" />
+            含子資料夾
+          </label>
+          <button id="scan-btn" class="btn btn-primary" disabled>開始掃描</button>
+          <button id="cancel-scan-btn" class="btn" hidden>取消</button>
+          <button id="export-btn" class="btn btn-primary" disabled>匯出報表</button>
+        </div>
+
+        <div id="progress-wrap" class="progress-wrap" hidden>
+          <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+          <span id="progress-text" class="progress-text"></span>
+        </div>
+
+        <div id="status-line" class="status-line"></div>
+        <div id="error-list" class="error-list" hidden></div>
+
+        <div class="table-wrap">
+          <table id="results-table">
+            <thead id="results-thead"></thead>
+            <tbody id="results-tbody"></tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <div id="preview-modal" class="modal-overlay" hidden>
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="preview-title">預覽</h3>
+          <button id="preview-close-btn" class="btn-close">&times;</button>
+        </div>
+        <div id="preview-meta" class="modal-meta"></div>
+        <div id="preview-grid-wrap" class="modal-grid-wrap">
+          <table id="preview-grid"></table>
+        </div>
+        <div class="modal-override">
+          <p class="field-card-hint">如果抓錯了,手動指定正確的儲存格重新抓一次:</p>
+          <div class="field-card-row">
+            <div style="flex:1">
+              <label>工作表</label>
+              <input id="override-sheet" type="text" />
+            </div>
+            <div style="width:120px">
+              <label>儲存格(例如 C5)</label>
+              <input id="override-address" type="text" placeholder="C5" />
+            </div>
+            <div style="align-self:flex-end">
+              <button id="override-apply-btn" class="btn">重新抓取</button>
+            </div>
+          </div>
+          <label class="checkbox-label">
+            <input id="exclude-checkbox" type="checkbox" />
+            這個檔案的這個欄位不匯出(略過)
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button id="preview-done-btn" class="btn btn-primary">完成</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>
