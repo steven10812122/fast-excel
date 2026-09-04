@@ -41,7 +41,15 @@ Fields checked: 96
 Correct:        96 (100.0%)
 ```
 
-This is generated data with known-correct answers, not a claim about arbitrary real-world files -- see Known limitations below for where the engine genuinely can't tell blocks apart. The point of committing the generator (`benchmark/generate.js`) rather than just the numbers is that anyone can regenerate and re-verify this themselves.
+This is generated data with known-correct answers, not a claim about arbitrary real-world files. The point of committing the generator (`benchmark/generate.js`) rather than just the numbers is that anyone can regenerate and re-verify this themselves.
+
+### Against real files
+
+`npm run benchmark:real-world` downloads real 10-Q "Financial Report" Excel exports from SEC EDGAR for 10 well-known public companies (Apple, Microsoft, Tesla, Coca-Cola, Nike, Starbucks, 3D Systems, Boeing, Pfizer, AMD) -- genuine filings, each with 40-50+ sheets, not generated -- and matches Revenue/Cost/Gross Profit/Net Income by keyword despite every company using different terminology for the same line ("Net sales" vs "Revenue" vs "Net Operating Revenues" vs "Revenues").
+
+Reported honestly, not cherry-picked: **roughly 30 of 40 fields come back fully correct**, several more are correct but with a stray label text prefixed to the real numbers (a real, open bug), and a handful are genuinely wrong or correctly reported as not found. The failures cluster in one specific, understandable place: filings where the exact same phrase ("Net income", say) legitimately appears many times across dozens of sheets -- a subsidiary's net income, a note's net income, the consolidated total's net income -- and the single best fuzzy-text match isn't necessarily the one on the primary income statement. Disambiguating "which of several textually-identical matches is the real one" needs more than keyword/structure matching; this is exactly the situation the preview + manual override exists for.
+
+Running this surfaced two real engine bugs before it exposed that remaining limitation: a whitespace-only placeholder cell (common in machine-generated exports) wasn't being treated as blank, and a direction with no header/label line to answer to could win the auto-direction tie-break just by running unbounded through an ordinary column of line-item labels. Both are fixed and covered by regression tests.
 
 ## Features
 
@@ -60,6 +68,7 @@ This is generated data with known-correct answers, not a claim about arbitrary r
 - If two tables sit right next to each other with **no blank, no border, and no header-line difference between them**, there's no signal left for a rule-based matcher (or a human glancing at bare numbers) to tell them apart automatically. Use the manual override in that case.
 - Only one blank value is tolerated inside a block (to bridge one missing month's data); two blanks in a row are treated as the real end of the table.
 - A field whose match is a genuine 2D matrix in some files exports as one joined-text cell rather than spread columns, since a matrix doesn't fit a "one row per file" table.
+- When the exact same phrase legitimately appears many times across a large multi-sheet workbook (a subsidiary's "Net income" vs a note's vs the consolidated total's, say), the single best fuzzy-text match isn't necessarily the semantically correct one -- see the real-world benchmark above. Manual override is the answer here, not a bigger threshold.
 
 ## Getting started
 

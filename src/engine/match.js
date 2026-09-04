@@ -122,8 +122,14 @@ function cellRawValue(cell) {
   return v === null || v === undefined ? '' : v;
 }
 
+// Real-world exports (SEC's XBRL-to-Excel renderer among them) commonly
+// pad an "empty" cell with a single space rather than leaving it truly
+// blank, to keep consistent cell formatting/borders. Visually that cell
+// is empty to a human; treating it as real data lets extension run away
+// through what should have been a stopping point.
 function isBlank(raw) {
-  return raw === '' || raw === null || raw === undefined;
+  if (raw === null || raw === undefined || raw === '') return true;
+  return typeof raw === 'string' && raw.trim() === '';
 }
 
 function colLetterToNumber(letters) {
@@ -306,6 +312,7 @@ function extractBlockForOrigin(worksheet, anchor, origin, otherAnchors) {
   const startCol = mergeSpan && origin === 'down' ? mergeSpan.left : origin === 'right' ? anchor.col + 1 : anchor.col;
 
   let width;
+  let widthIsReferenced = Boolean(mergeSpan);
   if (mergeSpan && origin === 'down') {
     width = mergeSpan.right - mergeSpan.left + 1;
   } else {
@@ -314,9 +321,11 @@ function extractBlockForOrigin(worksheet, anchor, origin, otherAnchors) {
         ? buildReference(worksheet, startRow, startCol, 'col')
         : buildLabelGuard(worksheet, anchor.row, anchor.col, 'col');
     width = measureRun(worksheet, startRow, startCol, 'col', widthRef, otherAnchors, origin === 'right' && Boolean(widthRef));
+    if (origin === 'right' && widthRef) widthIsReferenced = true;
   }
 
   let height;
+  let heightIsReferenced = Boolean(mergeSpan);
   if (mergeSpan && origin === 'right') {
     height = mergeSpan.bottom - mergeSpan.top + 1;
   } else {
@@ -325,9 +334,10 @@ function extractBlockForOrigin(worksheet, anchor, origin, otherAnchors) {
         ? buildReference(worksheet, startRow, startCol, 'row')
         : buildLabelGuard(worksheet, anchor.row, anchor.col, 'row');
     height = measureRun(worksheet, startRow, startCol, 'row', heightRef, otherAnchors, origin === 'down' && Boolean(heightRef));
+    if (origin === 'down' && heightRef) heightIsReferenced = true;
   }
 
-  if (width === 0 || height === 0) return { rows: 0, cols: 0, cells: [] };
+  if (width === 0 || height === 0) return { rows: 0, cols: 0, cells: [], hasReference: false };
 
   const cells = [];
   for (let r = 0; r < height; r++) {
@@ -338,25 +348,82 @@ function extractBlockForOrigin(worksheet, anchor, origin, otherAnchors) {
     }
     cells.push(rowCells);
   }
-  return { rows: height, cols: width, cells };
+  // Whether the axis this origin actually grows along (width for 'right',
+  // height for 'down') had a real header/label line -- or a merge -- to
+  // answer to, as opposed to running purely on blank/border detection
+  // through a column or row of otherwise ordinary text. A reference-less
+  // primary axis has nothing to stop it from running away through, say, a
+  // long stack of unrelated line-item labels in column A, so it shouldn't
+  // automatically win a direction tie-break just for covering more cells.
+  const hasReference = origin === 'right' ? widthIsReferenced : heightIsReferenced;
+  return { rows: height, cols: width, cells, hasReference };
+}
+
+// Fraction of a block's non-blank cells that are actual numbers, as
+// opposed to text. A direction that ran away unreferenced through a
+// column of ordinary line-item labels (see extractBlock below) produces
+// an all-text block; the direction it lost to almost always produces
+// mostly/all numbers, since that's what most fields being matched
+// actually are. Ignores blanks so a tolerated gap doesn't dilute it.
+function numericRatio(block) {
+  let total = 0;
+  let numeric = 0;
+  for (const row of block.cells) {
+    for (const cell of row) {
+      if (isBlank(cell.value)) continue;
+      total++;
+      if (typeof cell.value === 'number') numeric++;
+    }
+  }
+  return total === 0 ? 0 : numeric / total;
 }
 
 // A single field can't be told in advance whether a given report lays its
 // data out beside its label or below it -- real reports mix both, often
-// file to file. So try both origins and keep whichever finds more actual
-// cells; on a tie (including both empty) prefer 'down', since a label
-// sitting above a column of values is the more common shape in practice.
+// file to file. So try both origins and pick a winner in up to three
+// steps:
+//
+// 1. If exactly one direction's primary axis actually had a header/label
+//    line (or merge) backing it, prefer that one outright, regardless of
+//    raw size. A direction with no such reference is running purely on
+//    blank/border detection, which in a real spreadsheet can run away for
+//    many rows through ordinary, unrelated line-item labels (financial
+//    statements are full of exactly this shape) -- "found more cells"
+//    there means nothing.
+// 2. Otherwise, if both sides found something and one is overwhelmingly
+//    more numeric than the other, prefer that one -- the same runaway
+//    can happen even with *no* reference on either side (nothing above
+//    the label at all, the common case for the very first row of a
+//    section), and a block of text labels losing to a block of real
+//    numbers is a safe call regardless of which one is bigger.
+// 3. Otherwise, keep whichever found more actual cells; on a tie prefer
+//    'down', since a label sitting above a column of values is the more
+//    common shape in practice.
 //
 // When *both* directions turned up real data, this was a genuine fork --
-// even though one is bigger and almost certainly right, that's still a
-// guess. `ambiguous` surfaces that so the UI can flag it for a human
-// glance instead of silently trusting the guess.
+// even though one is bigger/referenced/numeric and almost certainly
+// right, that's still a guess. `ambiguous` surfaces that so the UI can
+// flag it for a human glance instead of silently trusting the guess.
 function extractBlock(worksheet, anchor, otherAnchors) {
   const right = extractBlockForOrigin(worksheet, anchor, 'right', otherAnchors);
   const down = extractBlockForOrigin(worksheet, anchor, 'down', otherAnchors);
   const rightSize = right.rows * right.cols;
   const downSize = down.rows * down.cols;
-  const chosen = downSize >= rightSize ? down : right;
+
+  let chosen;
+  if (right.hasReference !== down.hasReference) {
+    const referenced = right.hasReference ? right : down;
+    const unreferenced = right.hasReference ? down : right;
+    chosen = referenced.rows * referenced.cols > 0 ? referenced : unreferenced;
+  } else if (
+    rightSize > 0 &&
+    downSize > 0 &&
+    Math.abs(numericRatio(right) - numericRatio(down)) > 0.5
+  ) {
+    chosen = numericRatio(right) > numericRatio(down) ? right : down;
+  } else {
+    chosen = downSize >= rightSize ? down : right;
+  }
   return { ...chosen, ambiguous: rightSize > 0 && downSize > 0 };
 }
 

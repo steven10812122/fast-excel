@@ -7,6 +7,18 @@ function values(block) {
   return block.cells.map((row) => row.map((c) => c.value));
 }
 
+test('a whitespace-only placeholder cell counts as blank, not real data', () => {
+  // Real-world finding: some spreadsheet generators (SEC EDGAR's XBRL
+  // renderer among them) pad an empty cell with a single space instead of
+  // leaving it truly blank, to preserve consistent formatting.
+  const wb = buildWorkbook({
+    Sheet1: { A1: '營收', B1: 100, C1: 200, D1: '  ' },
+  });
+  const recipe = { fields: [{ name: '營收', keywords: ['營收'] }] };
+  const r = processLoadedWorkbook(wb, 'ws.xlsx', recipe);
+  assert.deepEqual(values(r.fields['營收'].block), [[100, 200]]);
+});
+
 test('finds a row block and stops at the blank cell', () => {
   const wb = buildWorkbook({
     Sheet1: { A1: '營收', B1: 100, C1: 200, D1: 300 },
@@ -202,6 +214,27 @@ test('an unmatched field is reported as not matched, not thrown', () => {
   const recipe = { fields: [{ name: '營收', keywords: ['營收'] }] };
   const r = processLoadedWorkbook(wb, 'm.xlsx', recipe);
   assert.equal(r.fields['營收'].matched, false);
+});
+
+test('a direction with no header/label reference does not win the tie just by covering more cells', () => {
+  // Regression found via real-world testing (SEC EDGAR financial
+  // statement exports): a label in column A with numbers to its right on
+  // the same row, stacked directly above a long column of *other*,
+  // unrelated line-item labels (also in column A, with no header row
+  // above any of it). The 'down' interpretation has no reference to stop
+  // it and runs through every label below, "winning" by raw cell count
+  // even though 'right' -- covering far fewer cells -- is obviously the
+  // correct read.
+  const wb = buildWorkbook({
+    Sheet1: {
+      A5: '毛利', B5: 36413, C5: 35885,
+      A6: '營業費用', A7: '研發費用', A8: '管理費用', A9: '營業費用總計', A10: '營業利益',
+    },
+  });
+  const recipe = { fields: [{ name: '毛利', keywords: ['毛利'] }] };
+  const r = processLoadedWorkbook(wb, 'o.xlsx', recipe);
+  const f = r.fields['毛利'];
+  assert.deepEqual(values(f.block), [[36413, 35885]]);
 });
 
 test('extractManual re-anchors at a hand-picked cell, bypassing keyword search', () => {
