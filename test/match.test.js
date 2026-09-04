@@ -77,6 +77,41 @@ test('tolerates one missing value mid-block when the header line still vouches f
   assert.deepEqual(values(f.block), [[100, '', 300, 400]]);
 });
 
+test('tolerates the missing value even when it is the very first one in the row', () => {
+  // Regression: the tolerated gap sits at the same (row, col) the
+  // perpendicular-axis height scan starts from. Previously the height
+  // scan's own unconditional blank check fired at n=0 there and reported
+  // height=0, nuking the whole block even though the row's width was
+  // computed correctly.
+  const wb = buildWorkbook({
+    Sheet1: { B1: 'Q1', C1: 'Q2', D1: 'Q3', A2: '營收', C2: 200, D2: 300 },
+    // B2 (Q1) is blank -- the very first data cell in the row.
+  });
+  const recipe = { fields: [{ name: '營收', keywords: ['營收'] }] };
+  const r = processLoadedWorkbook(wb, 'f2.xlsx', recipe);
+  const f = r.fields['營收'];
+  assert.equal(f.matched, true);
+  assert.deepEqual(values(f.block), [['', 200, 300]]);
+});
+
+test('tolerates the missing value even when it is the very last one in the row', () => {
+  // Regression: the lookahead used to require the *next* cell to have
+  // real data to confirm a gap was genuinely isolated -- which a trailing
+  // gap can never satisfy, since there is no next cell. When the header
+  // line itself also stops right there (there was never going to be a
+  // next column anyway), the gap should still be trusted as the final
+  // entry instead of being dropped.
+  const wb = buildWorkbook({
+    Sheet1: { B1: 'Q1', C1: 'Q2', D1: 'Q3', A2: '營收', B2: 100, C2: 200 },
+    // D2 (Q3) is blank -- the very last data cell in the row.
+  });
+  const recipe = { fields: [{ name: '營收', keywords: ['營收'] }] };
+  const r = processLoadedWorkbook(wb, 'f3.xlsx', recipe);
+  const f = r.fields['營收'];
+  assert.equal(f.matched, true);
+  assert.deepEqual(values(f.block), [[100, 200, '']]);
+});
+
 test('two consecutive missing values still end the block', () => {
   const wb = buildWorkbook({
     Sheet1: {

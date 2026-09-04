@@ -29,6 +29,20 @@ Direction (label-then-values-to-the-right vs. label-above-a-column-of-values) is
 
 None of this is a black box: click any result cell to see exactly which cell it matched, with what confidence, and the raw grid it pulled — and to manually override the anchor if it guessed wrong.
 
+## Benchmark
+
+`npm run benchmark` generates 24 files -- two years of monthly reports for a fictional company, systematically cycling through every messy layout this engine handles (position drift, merged titles, borders with unrelated data glued on, zero-gap adjacent fields, missing values, legacy .xls, mixed English/Chinese labels, a formula-error cell) -- then scans them with the real engine and checks every extracted value against the ground truth recorded at generation time.
+
+```
+Files:          24
+Fields/file:    4
+Time:           86 ms (3.6 ms/file)
+Fields checked: 96
+Correct:        96 (100.0%)
+```
+
+This is generated data with known-correct answers, not a claim about arbitrary real-world files -- see Known limitations below for where the engine genuinely can't tell blocks apart. The point of committing the generator (`benchmark/generate.js`) rather than just the numbers is that anyone can regenerate and re-verify this themselves.
+
 ## Features
 
 - **Keyword + synonym matching**, fuzzy (handles typos/rewording) — not exact string match

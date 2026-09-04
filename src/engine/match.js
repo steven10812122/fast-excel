@@ -186,6 +186,17 @@ function measureRun(worksheet, row, col, axis, reference, otherAnchors, tolerate
   let n = 0;
   let prevCell = null;
   let blanksTolerated = 0;
+  // The perpendicular/"guard" axis (buildLabelGuard, not buildReference)
+  // always treats its own n=0 position as trivially valid -- for a
+  // 'right' block that's the anchor's own row, for a 'down' block that's
+  // the anchor's own column -- which is exactly what buildLabelGuard's
+  // own `r === anchorRow ||` / `c === anchorCol ||` clause encodes. But
+  // if the *other* axis happens to have tolerated a gap at that exact
+  // (row, col), this cell can be genuinely blank -- and without this,
+  // that single blank at n=0 would kill the whole block (both axes
+  // start from the same point), even though the primary axis already
+  // correctly determined real data exists in this row/column elsewhere.
+  const isGuardAxis = !tolerateBlanks && Boolean(reference);
   for (;;) {
     const r = axis === 'row' ? row + n : row;
     const c = axis === 'col' ? col + n : col;
@@ -194,22 +205,27 @@ function measureRun(worksheet, row, col, axis, reference, otherAnchors, tolerate
 
     if (reference && !reference(r, c)) break;
 
-    if (blank) {
+    if (blank && !(n === 0 && isGuardAxis)) {
       // A single missing value (this file's number for one period, say)
       // doesn't necessarily mean the table ended -- if a header/label line
       // is actively vouching that a value belongs at this exact position
       // (only true for the primary reference line, not the perpendicular
       // label guard, which merely means "no other field has claimed this
       // yet"), trust it and keep going, recording an empty cell here. Only
-      // one such gap is bridged per block, and only when it's genuinely
-      // isolated -- the cell right after it must have real data, or this
-      // is the actual end of the table, not one missing data point.
+      // one such gap is bridged per block. It counts as genuinely
+      // isolated -- as opposed to the table having actually ended one
+      // cell earlier -- when either the next cell has real data, or
+      // there's no next cell to have data in at all (the header/label
+      // line itself stops right there too, so this was always going to
+      // be the last column/row regardless). Two real gaps in a row, where
+      // the line does keep going, is the only case that isn't trusted.
       if (!tolerateBlanks || blanksTolerated >= 1) break;
       const nr = axis === 'row' ? r + 1 : r;
       const nc = axis === 'col' ? c + 1 : c;
       const next = worksheet.getCell(nr, nc);
-      const nextOk = !isBlank(cellRawValue(next)) && (!reference || reference(nr, nc));
-      if (!nextOk) break;
+      const nextHasData = !isBlank(cellRawValue(next));
+      const nextInRange = !reference || reference(nr, nc);
+      if (!nextHasData && nextInRange) break;
       blanksTolerated++;
     }
 
