@@ -39,7 +39,21 @@ body {
 
 .sidebar h1 {
   font-size: 20px;
-  margin: 0 0 4px;
+  margin: 0;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.lang-toggle {
+  font-size: 11.5px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 3px 8px;
 }
 
 .tagline {

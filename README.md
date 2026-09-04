@@ -4,7 +4,10 @@
 
 用關鍵字抓資料,不用管每份 Excel 檔案的格子長在哪。丟一個資料夾進去,設定「我要抓哪些欄位」,它會自動在每個檔案裡找到符合的表頭,抓出對應的區塊,合併成一份報表。
 
-![Fast Excel screenshot](build/screenshot.png)
+![Fast Excel screenshot (English)](build/screenshot-en.png)
+![Fast Excel screenshot (中文)](build/screenshot.png)
+
+The UI is bilingual (English / 繁體中文), auto-detected from your OS language with a manual toggle in the top-left corner — the matching engine itself is language-agnostic, so keywords work the same whether they're "Revenue" or "營收".
 
 ## Why
 
@@ -35,6 +38,7 @@ None of this is a black box: click any result cell to see exactly which cell it 
 - **Recursive folder scan**, with a progress bar and cancel
 - **Recipe import/export** as a JSON file — share your field setup with a teammate or another machine
 - Multi-value fields spread into real numbered columns in the export (not just joined text) when the shape allows it
+- **Bilingual UI** (English / 中文), auto-detected with a manual toggle
 - Runs entirely **locally** — nothing leaves your machine
 
 ## Known limitations

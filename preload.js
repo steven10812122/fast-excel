@@ -11,8 +11,8 @@ contextBridge.exposeInMainWorld('fastExcel', {
     ipcRenderer.on('scan-progress', listener);
     return () => ipcRenderer.removeListener('scan-progress', listener);
   },
-  exportConsolidated: (results, recipe, outputPath) =>
-    ipcRenderer.invoke('export-consolidated', { results, recipe, outputPath }),
+  exportConsolidated: (results, recipe, outputPath, sourceFileLabel) =>
+    ipcRenderer.invoke('export-consolidated', { results, recipe, outputPath, sourceFileLabel }),
   rescanField: (filePath, sheetName, address, recipe, fieldName) =>
     ipcRenderer.invoke('rescan-field', { filePath, sheetName, address, recipe, fieldName }),
   saveRecipe: (fields) => ipcRenderer.invoke('recipe:save', fields),

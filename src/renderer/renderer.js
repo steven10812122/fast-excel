@@ -13,6 +13,7 @@ let currentScanId = null;
 let offProgress = null;
 let previewState = null; // { fileIndex, fieldName }
 
+const langToggleBtn = document.getElementById('lang-toggle-btn');
 const fieldListEl = document.getElementById('field-list');
 const addFieldBtn = document.getElementById('add-field-btn');
 const loadRecipeBtn = document.getElementById('load-recipe-btn');
@@ -51,12 +52,19 @@ function loadRecipe() {
   } catch (_) {
     // fall through to default
   }
-  return [{ name: '營收', keywords: '營收, 營業收入, revenue' }];
+  return [{ name: t('defaultFieldName'), keywords: t('defaultFieldKeywords') }];
 }
 
 function saveRecipe() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.fields));
 }
+
+langToggleBtn.addEventListener('click', () => {
+  setLang(getLang() === 'zh' ? 'en' : 'zh');
+  applyStaticI18n();
+  renderFieldList();
+  if (state.lastResults) renderResultsTable(state.lastResults, state.lastRecipe);
+});
 
 function renderFieldList() {
   fieldListEl.innerHTML = '';
@@ -66,19 +74,19 @@ function renderFieldList() {
     card.innerHTML = `
       <div class="field-card-row">
         <div style="flex:1">
-          <label>輸出欄位名稱</label>
-          <input type="text" data-key="name" value="${escapeAttr(field.name)}" placeholder="例如：營收" />
+          <label>${t('fieldNameLabel')}</label>
+          <input type="text" data-key="name" value="${escapeAttr(field.name)}" placeholder="${escapeAttr(t('fieldNamePlaceholder'))}" />
         </div>
       </div>
       <div class="field-card-row">
         <div style="flex:1">
-          <label>關鍵字(逗號分隔,支援同義詞)</label>
-          <textarea data-key="keywords" placeholder="營收, 營業收入, revenue">${escapeHtml(field.keywords)}</textarea>
+          <label>${t('fieldKeywordsLabel')}</label>
+          <textarea data-key="keywords" placeholder="${escapeAttr(t('fieldKeywordsPlaceholder'))}">${escapeHtml(field.keywords)}</textarea>
         </div>
       </div>
-      <p class="field-card-hint">自動判斷資料在標籤的右邊還是下面,並抓到第一個空格、框線,或撞到別的欄位為止,不用指定方向或格數。</p>
+      <p class="field-card-hint">${escapeHtml(t('fieldHint'))}</p>
       <div class="field-card-row">
-        <button class="field-card-remove" data-action="remove">移除這個欄位</button>
+        <button class="field-card-remove" data-action="remove">${t('removeFieldBtn')}</button>
       </div>
     `;
 
@@ -117,9 +125,9 @@ addFieldBtn.addEventListener('click', () => {
 saveRecipeBtn.addEventListener('click', async () => {
   try {
     const savedPath = await window.fastExcel.saveRecipe(state.fields);
-    if (savedPath) statusLine.textContent = `設定已存到 ${savedPath}`;
+    if (savedPath) statusLine.textContent = t('statusRecipeSaved', savedPath);
   } catch (err) {
-    statusLine.textContent = `存檔失敗:${err.message}`;
+    statusLine.textContent = t('statusRecipeSaveFailed', err.message);
   }
 });
 
@@ -128,15 +136,21 @@ loadRecipeBtn.addEventListener('click', async () => {
     const result = await window.fastExcel.loadRecipe();
     if (!result) return; // user cancelled the file picker
     if (!result.valid) {
-      statusLine.textContent = `匯入失敗:${result.error}`;
+      const codeToKey = {
+        not_array: 'recipeErrorNotArray',
+        no_valid_fields: 'recipeErrorNoValidFields',
+        invalid_json: 'recipeErrorInvalidJson',
+      };
+      const key = codeToKey[result.errorCode] || 'recipeErrorNoValidFields';
+      statusLine.textContent = t('statusRecipeImportFailed', t(key));
       return;
     }
     state.fields = result.fields;
     saveRecipe();
     renderFieldList();
-    statusLine.textContent = '設定已匯入。';
+    statusLine.textContent = t('statusRecipeImported');
   } catch (err) {
-    statusLine.textContent = `匯入失敗:${err.message}`;
+    statusLine.textContent = t('statusRecipeImportFailed', err.message);
   }
 });
 
@@ -166,11 +180,11 @@ function currentRecipe() {
 scanBtn.addEventListener('click', async () => {
   const recipe = currentRecipe();
   if (recipe.fields.length === 0) {
-    statusLine.textContent = '請先在左側設定至少一個欄位(名稱+關鍵字)。';
+    statusLine.textContent = t('statusNeedField');
     return;
   }
   if (!state.folderPath) {
-    statusLine.textContent = '請先選擇資料夾。';
+    statusLine.textContent = t('statusNeedFolder');
     return;
   }
 
@@ -182,7 +196,7 @@ scanBtn.addEventListener('click', async () => {
   progressWrap.hidden = false;
   progressFill.style.width = '0%';
   progressText.textContent = '';
-  statusLine.textContent = '掃描中…';
+  statusLine.textContent = t('statusScanning');
 
   const scanId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   currentScanId = scanId;
@@ -191,7 +205,7 @@ scanBtn.addEventListener('click', async () => {
     if (data.scanId !== scanId) return;
     const pct = data.total ? Math.round((data.done / data.total) * 100) : 0;
     progressFill.style.width = `${pct}%`;
-    progressText.textContent = `${data.done} / ${data.total}(${data.file}）`;
+    progressText.textContent = `${data.done} / ${data.total} (${data.file})`;
   });
 
   try {
@@ -208,20 +222,18 @@ scanBtn.addEventListener('click', async () => {
     state.excluded = new Set();
     renderResultsTable(results, recipe);
 
-    let msg = cancelled
-      ? `已取消,已處理 ${results.length} 個檔案。`
-      : `找到 ${fileCount} 個檔案,成功處理 ${results.length} 個。`;
+    let msg = cancelled ? t('statusCancelled', results.length) : t('statusScanned', fileCount, results.length);
     if (errors.length) {
-      msg += ` ${errors.length} 個檔案讀取失敗(詳見下方清單)。`;
+      msg += t('statusScanFailedSuffix', errors.length);
       errorListEl.hidden = false;
       errorListEl.innerHTML = errors
-        .map((e) => `<div>${escapeHtml(e.file.split(/[\\/]/).pop())}${escapeHtml(':' + e.message)}</div>`)
+        .map((e) => `<div>${escapeHtml(e.file.split(/[\\/]/).pop())}: ${escapeHtml(e.message)}</div>`)
         .join('');
     }
     statusLine.textContent = msg;
     exportBtn.disabled = results.length === 0;
   } catch (err) {
-    statusLine.textContent = `掃描失敗:${err.message}`;
+    statusLine.textContent = t('statusScanFailed', err.message);
   } finally {
     scanBtn.disabled = false;
     cancelScanBtn.hidden = true;
@@ -249,7 +261,7 @@ function renderResultsTable(results, recipe) {
 
   const headRow = document.createElement('tr');
   headRow.innerHTML =
-    '<th>來源檔案</th>' + recipe.fields.map((f) => `<th>${escapeHtml(f.name)}</th>`).join('');
+    `<th>${t('tableSourceFile')}</th>` + recipe.fields.map((f) => `<th>${escapeHtml(f.name)}</th>`).join('');
   theadEl.appendChild(headRow);
 
   results.forEach((result, fileIndex) => {
@@ -262,15 +274,15 @@ function renderResultsTable(results, recipe) {
       const fr = result.fields[field.name];
 
       if (state.excluded.has(excludeKey)) {
-        html += `<td><span class="cell-unmatched cell-clickable" data-file-index="${fileIndex}" data-field="${escapeAttr(field.name)}" title="已標記略過,點一下可以改">已略過</span></td>`;
+        html += `<td><span class="cell-unmatched cell-clickable" data-file-index="${fileIndex}" data-field="${escapeAttr(field.name)}" title="${escapeAttr(t('cellSkippedTitle'))}">${escapeHtml(t('cellSkipped'))}</span></td>`;
       } else if (fr && fr.matched) {
         const values = formatBlock(fr.block);
+        const ambiguousNote = fr.ambiguous ? t('ambiguousNote') : '';
+        const title = t('cellTitle', fr.sheet, fr.headerText, fr.headerAddress, fr.score, fr.block.rows, fr.block.cols, ambiguousNote);
         const ambiguousClass = fr.ambiguous ? ' cell-ambiguous' : '';
-        const ambiguousNote = fr.ambiguous ? ' ⚠ 往右/往下兩個方向都有資料,方向是自動判斷的,建議點開確認' : '';
-        const title = `工作表:${fr.sheet} | 命中表頭:「${fr.headerText}」(${fr.headerAddress}) | 相似度:${fr.score} | 區塊大小:${fr.block.rows} 列 x ${fr.block.cols} 欄${ambiguousNote}`;
         html += `<td><span class="cell-matched cell-clickable${ambiguousClass}" title="${escapeAttr(title)}" data-file-index="${fileIndex}" data-field="${escapeAttr(field.name)}">${escapeHtml(values)}</span></td>`;
       } else {
-        html += `<td><span class="cell-unmatched cell-clickable" title="這個檔案裡找不到符合關鍵字的表頭,點一下可以手動指定" data-file-index="${fileIndex}" data-field="${escapeAttr(field.name)}">未找到</span></td>`;
+        html += `<td><span class="cell-unmatched cell-clickable" title="${escapeAttr(t('cellNotFoundTitle'))}" data-file-index="${fileIndex}" data-field="${escapeAttr(field.name)}">${escapeHtml(t('cellNotFound'))}</span></td>`;
       }
     }
 
@@ -303,17 +315,13 @@ function openPreview(fileIndex, fieldName) {
 
 function renderPreviewContent(fr) {
   if (!fr || !fr.matched) {
-    previewMeta.innerHTML =
-      '<span class="warn">這個檔案裡找不到符合關鍵字的表頭。可以在下面手動指定儲存格重新抓取。</span>';
+    previewMeta.innerHTML = `<span class="warn">${escapeHtml(t('previewNotFound'))}</span>`;
     previewGrid.innerHTML = '';
     return;
   }
-  const ambiguousNote = fr.ambiguous
-    ? '<div class="warn">⚠ 往右跟往下兩個方向都抓到資料,這是自動判斷的結果,請確認是不是你要的區塊。</div>'
-    : '';
+  const ambiguousNote = fr.ambiguous ? `<div class="warn">${escapeHtml(t('previewAmbiguous'))}</div>` : '';
   previewMeta.innerHTML = `
-    工作表:${escapeHtml(fr.sheet)} ｜ 命中表頭:「${escapeHtml(fr.headerText)}」(${fr.headerAddress}) ｜
-    相似度:${fr.score} ｜ 區塊大小:${fr.block.rows} 列 x ${fr.block.cols} 欄
+    ${escapeHtml(t('previewMeta', fr.sheet, fr.headerText, fr.headerAddress, fr.score, fr.block.rows, fr.block.cols))}
     ${ambiguousNote}
   `;
   previewGrid.innerHTML = fr.block.cells
@@ -324,7 +332,7 @@ function renderPreviewContent(fr) {
           .map((c) => {
             const isEmpty = c.value === '' || c.value === null || c.value === undefined;
             return `<td class="${isEmpty ? 'empty-cell' : ''}" title="${escapeAttr(c.address)}">${
-              isEmpty ? '(空)' : escapeHtml(String(c.value))
+              isEmpty ? escapeHtml(t('emptyCell')) : escapeHtml(String(c.value))
             }</td>`;
           })
           .join('') +
@@ -340,7 +348,7 @@ overrideApplyBtn.addEventListener('click', async () => {
   const sheetName = overrideSheet.value.trim();
   const address = overrideAddress.value.trim();
   if (!sheetName || !address) {
-    previewMeta.innerHTML = '<span class="warn">請填工作表名稱跟儲存格位址(例如 C5)。</span>';
+    previewMeta.innerHTML = `<span class="warn">${escapeHtml(t('overrideMissingFields'))}</span>`;
     return;
   }
 
@@ -354,14 +362,14 @@ overrideApplyBtn.addEventListener('click', async () => {
       fieldName
     );
     if (!fr) {
-      previewMeta.innerHTML = '<span class="warn">找不到這個工作表,請確認名稱正確。</span>';
+      previewMeta.innerHTML = `<span class="warn">${escapeHtml(t('overrideSheetNotFound'))}</span>`;
       return;
     }
     result.fields[fieldName] = fr;
     renderPreviewContent(fr);
     renderResultsTable(state.lastResults, state.lastRecipe);
   } catch (err) {
-    previewMeta.innerHTML = `<span class="warn">重新抓取失敗:${escapeHtml(err.message)}</span>`;
+    previewMeta.innerHTML = `<span class="warn">${escapeHtml(t('overrideFailed', err.message))}</span>`;
   } finally {
     overrideApplyBtn.disabled = false;
   }
@@ -398,16 +406,17 @@ exportBtn.addEventListener('click', async () => {
     return { file: result.file, fields };
   });
 
-  statusLine.textContent = '匯出中…';
+  statusLine.textContent = t('statusExporting');
   exportBtn.disabled = true;
   try {
-    await window.fastExcel.exportConsolidated(payload, state.lastRecipe, outputPath);
-    statusLine.textContent = `已匯出至 ${outputPath}`;
+    await window.fastExcel.exportConsolidated(payload, state.lastRecipe, outputPath, t('tableSourceFile'));
+    statusLine.textContent = t('statusExported', outputPath);
   } catch (err) {
-    statusLine.textContent = `匯出失敗:${err.message}`;
+    statusLine.textContent = t('statusExportFailed', err.message);
   } finally {
     exportBtn.disabled = false;
   }
 });
 
+applyStaticI18n();
 renderFieldList();

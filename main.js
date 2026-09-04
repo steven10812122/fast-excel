@@ -76,8 +76,8 @@ ipcMain.on('scan-cancel', (_event, scanId) => {
   cancelledScans.add(scanId);
 });
 
-ipcMain.handle('export-consolidated', async (_event, { results, recipe, outputPath }) => {
-  await exportConsolidated(results, recipe, outputPath);
+ipcMain.handle('export-consolidated', async (_event, { results, recipe, outputPath, sourceFileLabel }) => {
+  await exportConsolidated(results, recipe, outputPath, sourceFileLabel);
   return true;
 });
 
@@ -120,7 +120,7 @@ ipcMain.handle('recipe:load', async () => {
   try {
     parsed = JSON.parse(fs.readFileSync(result.filePaths[0], 'utf-8'));
   } catch (err) {
-    return { valid: false, error: '這個檔案不是合法的 JSON 格式。' };
+    return { valid: false, errorCode: 'invalid_json' };
   }
   return validateRecipeFields(parsed);
 });

@@ -14,7 +14,7 @@ test('accepts a well-formed recipe', () => {
 test('rejects a file whose top level is not an array', () => {
   const result = validateRecipeFields({ name: '營收', keywords: '營收' });
   assert.equal(result.valid, false);
-  assert.match(result.error, /陣列/);
+  assert.equal(result.errorCode, 'not_array');
 });
 
 test('rejects null, a plain string, and a number', () => {
@@ -40,6 +40,6 @@ test('drops individual malformed entries but keeps the valid ones', () => {
 });
 
 test('rejects an empty array and an array of only garbage', () => {
-  assert.equal(validateRecipeFields([]).valid, false);
-  assert.equal(validateRecipeFields([null, 1, 'x', {}]).valid, false);
+  assert.equal(validateRecipeFields([]).errorCode, 'no_valid_fields');
+  assert.equal(validateRecipeFields([null, 1, 'x', {}]).errorCode, 'no_valid_fields');
 });

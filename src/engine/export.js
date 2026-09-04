@@ -28,13 +28,13 @@ function joinedBlockText(block) {
   return block.cells.map((row) => row.map((c) => c.value).join(', ')).join(' | ');
 }
 
-async function exportConsolidated(results, recipe, outputPath) {
+async function exportConsolidated(results, recipe, outputPath, sourceFileLabel = 'Source file') {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('Consolidated');
 
   const plans = new Map(recipe.fields.map((f) => [f.name, fieldColumnPlan(f.name, results)]));
 
-  const columns = [{ header: '來源檔案', key: '__file', width: 32 }];
+  const columns = [{ header: sourceFileLabel, key: '__file', width: 32 }];
   for (const field of recipe.fields) {
     const plan = plans.get(field.name);
     if (plan.spread) {

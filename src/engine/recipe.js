@@ -3,9 +3,13 @@
 // points at, not something this app wrote itself -- so a malformed or
 // hand-edited file must be rejected cleanly instead of getting to
 // `renderFieldList()` and breaking on a missing `.trim()` etc.
+//
+// Returns an `errorCode` rather than a message: this runs in the main
+// process, which has no notion of the renderer's active UI language, so
+// the renderer maps the code to a localized string itself.
 function validateRecipeFields(raw) {
   if (!Array.isArray(raw)) {
-    return { valid: false, error: '這不是一份 Fast Excel 設定檔(最外層不是陣列)。' };
+    return { valid: false, errorCode: 'not_array' };
   }
 
   const fields = raw.filter(
@@ -17,7 +21,7 @@ function validateRecipeFields(raw) {
   );
 
   if (fields.length === 0) {
-    return { valid: false, error: '這份設定檔裡沒有找到任何有效的欄位設定。' };
+    return { valid: false, errorCode: 'no_valid_fields' };
   }
 
   return { valid: true, fields };
