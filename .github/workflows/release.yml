@@ -24,6 +24,13 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - run: npx electron-builder --publish always
+      - name: Build and publish (mac, both architectures)
+        if: matrix.os == 'macos-latest'
+        run: npx electron-builder --mac --x64 --arm64 --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and publish
+        if: matrix.os != 'macos-latest'
+        run: npx electron-builder --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
