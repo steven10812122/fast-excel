@@ -1,84 +1,86 @@
 # Fast Excel
 
-**Stop copy-pasting the same cells out of a folder of messy Excel reports every month.** Fast Excel finds your data by keyword, not by fixed cell position — so it doesn't matter that this month's revenue number moved from `B2` to `C5`, or that someone merged a title cell across four columns.
+🌐 **English** | [繁體中文](README.zh-TW.md)
 
-用關鍵字抓資料,不用管每份 Excel 檔案的格子長在哪。丟一個資料夾進去,設定「我要抓哪些欄位」,它會自動在每個檔案裡找到符合的表頭,抓出對應的區塊,合併成一份報表。
+**Stop copy-pasting the same cells out of a folder of messy Excel/CSV reports every month.** Fast Excel finds your data by keyword, not by fixed cell position — so it doesn't matter that this month's revenue number moved from `B2` to `C5`, or that someone merged a title cell across four columns.
 
-## 下載安裝(Download)
+## Download
 
-**不需要先裝 Node.js、不需要打任何指令**——下載完對應你系統的檔案,直接安裝就能用:
+**No Node.js, no command line needed** — download the file for your system and install it directly:
 
-| 系統 | 下載 |
+| System | Download |
 |---|---|
 | Windows | **[FastExcel-win-x64.exe](https://github.com/steven10812122/fast-excel/releases/latest/download/FastExcel-win-x64.exe)** |
-| Mac(Apple 晶片,M1/M2/M3/M4) | **[FastExcel-mac-arm64.dmg](https://github.com/steven10812122/fast-excel/releases/latest/download/FastExcel-mac-arm64.dmg)** |
-| Mac(Intel 晶片) | **[FastExcel-mac-x64.dmg](https://github.com/steven10812122/fast-excel/releases/latest/download/FastExcel-mac-x64.dmg)** |
+| Mac (Apple chip, M1/M2/M3/M4) | **[FastExcel-mac-arm64.dmg](https://github.com/steven10812122/fast-excel/releases/latest/download/FastExcel-mac-arm64.dmg)** |
+| Mac (Intel chip) | **[FastExcel-mac-x64.dmg](https://github.com/steven10812122/fast-excel/releases/latest/download/FastExcel-mac-x64.dmg)** |
 | Linux | **[FastExcel-linux-x86_64.AppImage](https://github.com/steven10812122/fast-excel/releases/latest/download/FastExcel-linux-x86_64.AppImage)** |
 
-不知道自己的 Mac 是哪種晶片:蘋果選單 → 「關於此 Mac」,看「晶片」那一欄是 Apple(M 開頭)還是 Intel。
+Not sure which Mac chip you have: Apple menu → "About This Mac" → the "Chip" line says either Apple (starts with M) or Intel.
 
-**第一次打開會被系統擋一下,這是正常的**(因為沒有花錢買憑證簽章,不是檔案壞掉):
+**The first time you open it, your OS will push back — this is expected**, not a sign the file is broken (it's just not signed with a paid certificate):
 
-- **Windows**:跳出「Windows 已保護您的電腦」→ 點左下角「其他資訊」→「仍要執行」
-- **Mac**:可能顯示「已損毀,無法打開」→ 打開「終端機」App,貼上這行按 Enter:
+- **Windows**: "Windows protected your PC" appears → click "More info" → "Run anyway"
+- **macOS**: may say "is damaged and can't be opened" → open **Terminal** and run:
   ```
   xattr -cr "/Applications/Fast Excel.app"
   ```
-  或是:先嘗試打開一次(會被擋)→ 到「系統設定」→「隱私權與安全性」→ 往下滑會看到剛剛被擋的提示 → 點「強制打開」
-- **Linux**:下載完先給執行權限再雙擊:`chmod +x FastExcel-linux-x86_64.AppImage`
+  or: try opening it once (it'll be blocked), then go to System Settings → Privacy & Security, scroll down to the blocked-app notice, and click "Open Anyway"
+- **Linux**: give it execute permission first, then double-click: `chmod +x FastExcel-linux-x86_64.AppImage`
 
-## 截圖
+## Screenshot
 
 ![Fast Excel screenshot (English)](build/screenshot-en.png)
 ![Fast Excel screenshot (中文)](build/screenshot.png)
 
-介面有繁體中文/英文兩種語言,會自動偵測系統語言,左上角也能手動切換。
+The UI is bilingual (English / 繁體中文), auto-detected from your OS language with a manual toggle in the top-left corner.
 
-## 這是什麼
+## What this is
 
-每個月打開 20 份 Excel 報表,在每一份裡面找同樣那幾格資料、複製貼上到彙總表——這件事無聊、慢,而且每份檔案格式常常對不齊(這個月表頭在第 1 列,下個月因為有人多插了一列,變成第 2 列)。
+Every month, someone opens 20 Excel files, hunts for the same handful of cells in each one, copies, and pastes them into a summary sheet for the exec report. It's boring, slow, and the layout is never quite consistent from file to file — one month the header is in row 1, the next it's in row 2 because someone inserted a row.
 
-Fast Excel 自動做這件事。你只要說「我要找什麼」(關鍵字,可以設同義詞),不用說「它在哪」,每個檔案的「在哪」由程式自己判斷出來。
+Fast Excel automates that hunt. You describe *what* you're looking for (keywords, with synonyms), not *where* it is — it figures out the "where" per file.
 
-## 功能
+## Features
 
-- 關鍵字 + 同義詞比對,容錯(可以有錯字、用詞不完全一樣)
-- 自動判斷抓取範圍多大(一個值、一整列、一整欄,或一整個矩陣區塊),不用手動指定
-- 抓完可以預覽、手動修正抓錯的儲存格、或標記某個欄位不匯出
-- 支援新版 .xlsx 跟舊版 .xls
-- 可以掃描資料夾裡的子資料夾,有進度條、可以取消
-- 抓取設定可以存成檔案分享給同事,或搬到別台電腦
-- 完全在本機執行,資料不會傳到任何地方
+- Keyword + synonym matching, fuzzy (handles typos/rewording)
+- Auto-detects how big the block is (a single value, a row, a column, or a full matrix) — nothing to configure by hand
+- Preview results, manually re-anchor a wrong match, or exclude a field from export
+- Reads **.xlsx, legacy .xls, and .csv**
+- Recursive folder scan, with a progress bar and cancel
+- Save your field setup as a file to share with a teammate or move to another machine
+- Runs entirely locally — nothing leaves your machine
 
-## 已知限制
+## Known limitations
 
-- 如果兩個表格緊貼在一起、中間完全沒有空格、沒有框線、表頭也看不出差異,程式沒辦法自動分清楚兩者的邊界,要用手動修正
-- 一個區塊裡最多容忍一格缺值(例如某個月數字沒填),連續兩格缺值會被當成表格真的結束了
-- 同一個詞如果在一份很大的檔案裡(很多工作表)重複出現很多次意思卻不一樣(例如「淨利」同時是某個子公司的淨利、又是合併總數的淨利),程式可能抓到不是你要的那個,這時候也是用手動修正
+- If two tables sit right next to each other with no blank, no border, and no header-line difference between them, there's no signal left to tell them apart automatically — use the manual override.
+- Only one blank value is tolerated inside a block (bridging one missing month's data); two blanks in a row are treated as the real end of the table.
+- A field whose match is a genuine 2D matrix in some files exports as one joined-text cell rather than spread columns.
+- When the exact same phrase legitimately appears many times across a large multi-sheet workbook, the single best fuzzy-text match isn't necessarily the semantically correct one — see the real-world benchmark below. Manual override is the answer here, not a bigger threshold.
+- .csv has no borders or merged cells at all, so 2 of the 5 boundary signals (border, merge) never apply to it — blank-cell, header/label-line, and cross-field-anchor detection all still work exactly the same as on .xlsx.
 
 ---
 
-## 給開發者(For developers)
+## For developers
 
-以下內容是給想改程式碼、貢獻、或想自己從原始碼建置的人看的——一般使用者不需要看,上面下載安裝檔就能用了。
+The following is for people who want to modify the code, contribute, or build from source — regular users don't need to read past this point; the download links above are all you need.
 
-### 怎麼判斷抓取範圍的
+### How the matching works
 
-沒有固定的儲存格範圍、沒有「抓幾格」的設定。每個欄位的範圍用五層疊加的訊號自動判斷,任何一層都可能讓它停止延伸：
+No manual cell ranges, no fixed "grab N cells" count. A field's range is auto-detected using five stacked signals, any one of which can end it:
 
-1. **空格** — 最基本的,遇到空儲存格就停
-2. **刻意畫的框線** — 中粗/粗/雙線框線標記表格邊界,即使緊接著的儲存格不是空的(旁邊剛好貼著別的表格)
-3. **表頭/標籤列** — 資料正上方(或左邊)那一列/欄的名稱,比資料本身更可信,甚至能容忍中間單獨一格缺值(某個月數字沒填,但前後都有)
-4. **撞到別的欄位的錨點** — 如果兩個標籤緊貼在一起中間沒空格(「營收」後面立刻接「虧損」),第一個欄位的範圍會精準停在第二個標籤開始的地方
-5. **合併儲存格** — 如果標籤本身是合併儲存格(例如 `A1:D1`),直接用合併範圍當作寬度/高度,因為這是做表的人明確表示「這個標籤蓋住 4 欄」
+1. **Blank cell** — the classic case, stop at the first empty cell.
+2. **Deliberate border** — a medium/thick/double border marks a table edge even when the next cell isn't blank (e.g. an unrelated table sits right next to it). *(.xlsx/.xls only.)*
+3. **Header/label line** — the row above (or column to the left) naming each real column is trusted over the data row itself, and can even bridge a single isolated missing value (one month's number is blank, but neighbors aren't).
+4. **Another field's own anchor** — if two labels sit right next to each other with zero gap ("營收" then immediately "虧損"), the first field's range stops exactly where the second one's label starts.
+5. **A merged, centered title** — if the label is a merged cell (e.g. `A1:D1`), its own span is used as the width/height directly, since that's the report author explicitly stating "this covers 4 columns." *(.xlsx/.xls only.)*
 
-方向(標籤在左邊資料在右邊 vs. 標籤在上面資料在下面)也是自動判斷、兩個方向都試,哪個抓到的資料多就用哪個。如果兩個方向都抓到東西,結果會標記「不確定」讓你在介面上確認。
+Direction (label-then-values-to-the-right vs. label-above-a-column-of-values) is auto-picked per anchor too — both are tried, and whichever finds more real data wins. When both directions found *something*, the result is flagged **ambiguous** in the UI so you can glance at it before trusting it.
 
-不是黑箱:點任何一個抓取結果可以看到抓到哪一格、信心分數多少、原始區塊長怎樣,抓錯了可以手動指定正確的儲存格重新抓。
+None of this is a black box: click any result cell to see exactly which cell it matched, with what confidence, and the raw grid it pulled — and to manually override the anchor if it guessed wrong.
 
 ### Benchmark
 
-`npm run benchmark` 會生成 24 個檔案(模擬兩年份月報表),系統性地輪流用過引擎能處理的每一種刁鑽情境(位置飄移、合併標題、框線旁貼著無關資料、緊貼欄位、缺值、舊版 .xls、中英混合標籤、公式錯誤),用真正的引擎去掃,對照生成時記錄的正確答案逐格核對。
+`npm run benchmark` generates 24 files — two years of monthly reports for a fictional company, systematically cycling through every messy layout this engine handles (position drift, merged titles, borders with unrelated data glued on, zero-gap adjacent fields, missing values, legacy .xls, mixed English/Chinese labels, a formula-error cell) — then scans them with the real engine and checks every extracted value against the ground truth recorded at generation time.
 
 ```
 Files:          24
@@ -88,29 +90,33 @@ Fields checked: 96
 Correct:        96 (100.0%)
 ```
 
-這是生成但答案已知的資料,不是「真實世界資料」的證明——`npm run benchmark:real-world` 才是:從 SEC EDGAR(美國證交會)下載 10 家真實上市公司(Apple、Microsoft、Tesla、可口可樂、Nike、星巴克、3D Systems、波音、輝瑞、AMD)的真實季報 Excel 檔(每份 40-50+ 個工作表,不是生成的),用同一組關鍵字去抓營收/成本/毛利/淨利,即使每家公司用詞都不一樣("Net sales" vs "Revenue" vs "Net Operating Revenues")。
+This is generated data with known-correct answers, not a claim about arbitrary real-world files. The point of committing the generator (`benchmark/generate.js`) rather than just the numbers is that anyone can regenerate and re-verify this themselves.
 
-老實報告,沒有挑好的講:40 個欄位裡大約 30 個完全正確,幾個正確但多黏了一個標籤文字(還沒修的真 bug),剩下幾個是真的抓錯或誠實回報「找不到」。錯誤幾乎都集中在同一種情況:同一個詞在幾十個工作表裡合法重複出現很多次,單純比對文字沒辦法知道哪一個才是主要那個——這正是手動修正功能存在的原因。
+`npm run benchmark:real-world` is the real-world version: it downloads real 10-Q "Financial Report" Excel exports from SEC EDGAR for 10 well-known public companies (Apple, Microsoft, Tesla, Coca-Cola, Nike, Starbucks, 3D Systems, Boeing, Pfizer, AMD) — genuine filings, each with 40-50+ sheets, not generated — and matches Revenue/Cost/Gross Profit/Net Income by keyword despite every company using different terminology for the same line ("Net sales" vs "Revenue" vs "Net Operating Revenues" vs "Revenues").
 
-跑這個測試的過程中抓到兩個真的引擎 bug 並修好了:機器產生的檔案常把「空」儲存格填一個空白字元而不是真的空,原本沒被當成空的;還有當一個方向完全沒有表頭可以參照時,可能一路吃過一整欄不相關的文字標籤、單純因為格子數量多就贏了正確答案。兩個都補了回歸測試。
+Reported honestly, not cherry-picked: roughly 30 of 40 fields come back fully correct, several more are correct but with a stray label text prefixed to the real numbers (a real, open bug), and a handful are genuinely wrong or correctly reported as not found. The failures cluster in one specific, understandable place: filings where the exact same phrase ("Net income", say) legitimately appears many times across dozens of sheets — a subsidiary's net income, a note's net income, the consolidated total's net income — and the single best fuzzy-text match isn't necessarily the one on the primary income statement. Disambiguating "which of several textually-identical matches is the real one" needs more than keyword/structure matching; this is exactly the situation the preview + manual override exists for.
 
-### 從原始碼建置
+Running this surfaced two real engine bugs before it exposed that remaining limitation: a whitespace-only placeholder cell (common in machine-generated exports) wasn't being treated as blank, and a direction with no header/label line to answer to could win the auto-direction tie-break just by running unbounded through an ordinary column of line-item labels. Both are fixed and covered by regression tests.
 
-需要 [Node.js](https://nodejs.org) 18+。
+`npm run benchmark:real-world-csv` does the same against a real **.csv**: Taiwan Stock Exchange's official open dataset of quarterly operating results, ~950 listed companies in one flat table — a genuinely different real-world shape (one wide table with many rows, instead of a few key line items per file), and one with no borders or merged cells at all, since CSV can't carry either. It matches all 4 fields correctly by header, but stops at row 463 of 1053: two insurance companies in a row (out of dozens scattered through the file with only some fields populated) have every field genuinely blank, which correctly triggers the "two blanks in a row ends the block" rule. That's defensible — stopping and letting you notice via preview beats silently plowing through a real gap — but it does mean this specific shape (thousands of rows, sparse real gaps throughout) isn't what the two-tolerated-blanks design center on; it was built around a handful of periods per line item, not a scan down thousands of rows.
+
+### Build from source
+
+Requires [Node.js](https://nodejs.org) 18+.
 
 ```bash
 npm install
-npm start        # 執行 App
-npm test          # 跑測試
+npm start        # run the app
+npm test          # run the test suite
 ```
 
 ```bash
-npm run dist:win     # Windows 安裝檔 (.exe)
-npm run dist:mac     # macOS App (.dmg,Intel + Apple Silicon)
+npm run dist:win     # Windows installer (.exe, NSIS)
+npm run dist:mac     # macOS app (.dmg, Intel + Apple Silicon)
 npm run dist:linux   # Linux (.AppImage)
 ```
 
-推一個像 `v0.1.0` 的 tag 也會透過 GitHub Actions(`.github/workflows/release.yml`)自動打包三平台並掛到對應的 GitHub Release 上。
+Pushing a tag like `v0.1.0` also builds all three automatically via GitHub Actions (`.github/workflows/release.yml`) and attaches them to that tag's GitHub Release.
 
 ## License
 

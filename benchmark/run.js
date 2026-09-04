@@ -5,7 +5,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { listExcelFiles } = require('../src/engine/files');
+const { listDataFiles } = require('../src/engine/files');
 const { scanFiles } = require('../src/engine/scan');
 
 const FILES_DIR = path.join(__dirname, 'files');
@@ -20,7 +20,7 @@ async function main() {
   const recipe = { fields: fields.map((f) => ({ name: f.name, keywords: f.keywords })) };
   const truthByFile = new Map(truths.map((t) => [t.file, t]));
 
-  const files = listExcelFiles(FILES_DIR, false);
+  const files = listDataFiles(FILES_DIR, false);
 
   const started = process.hrtime.bigint();
   const { results, errors } = await scanFiles(files, recipe, undefined, {});

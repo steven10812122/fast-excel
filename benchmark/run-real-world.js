@@ -7,7 +7,7 @@
 // controlled test, results are reported as-is including any misses.
 
 const path = require('path');
-const { listExcelFiles } = require('../src/engine/files');
+const { listDataFiles } = require('../src/engine/files');
 const { scanFiles } = require('../src/engine/scan');
 
 const FILES_DIR = path.join(__dirname, 'real-world');
@@ -22,7 +22,7 @@ const recipe = {
 };
 
 async function main() {
-  const files = listExcelFiles(FILES_DIR, false);
+  const files = listDataFiles(FILES_DIR, false);
   console.log(`Scanning ${files.length} real SEC EDGAR filings...\n`);
 
   const started = process.hrtime.bigint();

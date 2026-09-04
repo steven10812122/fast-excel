@@ -5,7 +5,7 @@ const { autoUpdater } = require('electron-updater');
 
 const { extractManual, findHeaderCell } = require('./src/engine/match');
 const { exportConsolidated } = require('./src/engine/export');
-const { listExcelFiles, loadWorkbook } = require('./src/engine/files');
+const { listDataFiles, loadWorkbook } = require('./src/engine/files');
 const { scanFiles } = require('./src/engine/scan');
 const { validateRecipeFields } = require('./src/engine/recipe');
 
@@ -61,7 +61,7 @@ ipcMain.handle('dialog:select-save-path', async () => {
 const cancelledScans = new Set();
 
 ipcMain.handle('scan-folder', async (event, { folderPath, recipe, recursive, scanId, threshold }) => {
-  const files = listExcelFiles(folderPath, recursive);
+  const files = listDataFiles(folderPath, recursive);
   const outcome = await scanFiles(files, recipe, threshold, {
     shouldCancel: () => cancelledScans.has(scanId),
     onProgress: ({ done, total, file }) => {

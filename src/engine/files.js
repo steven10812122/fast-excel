@@ -7,7 +7,7 @@ const path = require('path');
 const ExcelJS = require('exceljs');
 const XLSX = require('xlsx');
 
-function listExcelFiles(folderPath, recursive) {
+function listDataFiles(folderPath, recursive) {
   const found = [];
   function walk(dir) {
     for (const name of fs.readdirSync(dir)) {
@@ -18,7 +18,7 @@ function listExcelFiles(folderPath, recursive) {
         if (recursive) walk(full);
         continue;
       }
-      if (/\.xlsx?$/i.test(name)) found.push(full);
+      if (/\.(xlsx|xls|csv)$/i.test(name)) found.push(full);
     }
   }
   walk(folderPath);
@@ -32,9 +32,19 @@ function listExcelFiles(folderPath, recursive) {
 // formatting fidelity (older border styles in particular) can be lost in
 // that round-trip -- .xls files fall back to blank/other-anchor detection
 // more often than a native .xlsx would.
+//
+// .csv goes through exceljs's own CSV reader, which lands in the exact
+// same Workbook/Worksheet shape as a real .xlsx -- numeric-looking fields
+// come back as actual numbers, empty fields as null, so every matching
+// rule downstream works unmodified. What a CSV structurally *can't*
+// carry -- borders, merged cells -- just means those two of the five
+// boundary signals never fire for it; blank-cell, header/label-line, and
+// cross-field-anchor detection all still apply normally.
 async function loadWorkbook(filePath) {
   const workbook = new ExcelJS.Workbook();
-  if (/\.xls$/i.test(filePath)) {
+  if (/\.csv$/i.test(filePath)) {
+    await workbook.csv.readFile(filePath);
+  } else if (/\.xls$/i.test(filePath)) {
     const legacy = XLSX.readFile(filePath, { cellStyles: true });
     const buffer = XLSX.write(legacy, { type: 'buffer', bookType: 'xlsx' });
     await workbook.xlsx.load(buffer);
@@ -44,4 +54,4 @@ async function loadWorkbook(filePath) {
   return workbook;
 }
 
-module.exports = { listExcelFiles, loadWorkbook };
+module.exports = { listDataFiles, loadWorkbook };

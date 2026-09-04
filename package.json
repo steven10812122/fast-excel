@@ -1,7 +1,7 @@
 {
   "name": "fast-excel",
-  "version": "0.1.0",
-  "description": "Drag in a folder of Excel files with inconsistent layouts, match fields by keyword instead of fixed cell position, and consolidate them into one report.",
+  "version": "0.1.1",
+  "description": "Drag in a folder of Excel/CSV files with inconsistent layouts, match fields by keyword instead of fixed cell position, and consolidate them into one report.",
   "main": "main.js",
   "private": true,
   "scripts": {
@@ -9,6 +9,7 @@
     "test": "node --test test/",
     "benchmark": "node benchmark/generate.js && node benchmark/run.js",
     "benchmark:real-world": "node benchmark/fetch-real-world.js && node benchmark/run-real-world.js",
+    "benchmark:real-world-csv": "node benchmark/fetch-real-world-csv.js && node benchmark/run-real-world-csv.js",
     "dist:win": "electron-builder --win --x64",
     "dist:mac": "electron-builder --mac --x64 --arm64",
     "dist:linux": "electron-builder --linux --x64"
